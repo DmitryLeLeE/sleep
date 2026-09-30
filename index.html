@@ -1,0 +1,735 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ночная смена — атлас сна и мозга</title>
+<meta name="description" content="Интерактивный 3D-атлас «Сон и мозг: что происходит ночью» в духе советского научпопа 1960-х: десять глав о сне и восемь журнальных вкладок.">
+<meta name="theme-color" content="#efe6cf">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=PT+Mono&family=PT+Serif:ital,wght@0,400;0,700;1,400&family=Russo+One&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23efe6cf'/%3E%3Cpath d='M20 5a11 11 0 1 0 7 19A9 9 0 0 1 20 5z' fill='%23b3261e'/%3E%3C/svg%3E">
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js" } }
+</script>
+<script>
+  // Режим выставляем до отрисовки, чтобы не мигала «чужая» тема
+  try { if (localStorage.getItem('nsmena-mode') === 'blueprint') document.documentElement.dataset.mode = 'blueprint'; } catch (e) {}
+</script>
+</head>
+<body>
+<a class="skip" href="#ch1">К первой главе</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="pic-man" viewBox="0 0 24 40"><circle cx="12" cy="5" r="4.5"/><path d="M5 12h14l-2 13h-2l-1 14h-4L9 25H7z"/></symbol>
+    <symbol id="pic-sleeper" viewBox="0 0 40 24"><circle cx="6" cy="14" r="4.5"/><path d="M12 10h24a3 3 0 0 1 3 3v5H12z"/><path d="M1 20h38v3H1z"/></symbol>
+    <symbol id="pic-moon" viewBox="0 0 24 24"><path d="M15 2a10 10 0 1 0 7 15A8 8 0 0 1 15 2z"/></symbol>
+    <symbol id="pic-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M11 0h2v5h-2zM11 19h2v5h-2zM0 11h5v2H0zM19 11h5v2h-5zM3.5 5l1.5-1.5 3.5 3.5L7 8.5zM16 17.5l1.5-1.5 3.5 3.5-1.5 1.5zM3.5 19l3.5-3.5 1.5 1.5L5 20.5zM16 7l3.5-3.5L21 5l-3.5 3.5z"/></symbol>
+    <symbol id="pic-owl" viewBox="0 0 40 40"><path d="M8 6l6 5h12l6-5v18c0 8-5 13-12 13S8 32 8 24z"/><circle cx="15" cy="18" r="4.5" fill="var(--paper)"/><circle cx="25" cy="18" r="4.5" fill="var(--paper)"/><circle cx="15" cy="18" r="2"/><circle cx="25" cy="18" r="2"/><path d="M18 23h4l-2 4z" fill="var(--paper)"/></symbol>
+    <symbol id="pic-lark" viewBox="0 0 40 40"><path d="M4 22c6-10 16-12 22-8l10-6-4 10c2 8-6 16-16 14-5-1-9-4-12-10z"/><path d="M14 8l4-6 3 7z"/><circle cx="27" cy="16" r="1.6" fill="var(--paper)"/></symbol>
+    <symbol id="pic-eye" viewBox="0 0 40 24"><path d="M2 12C8 3 32 3 38 12 32 21 8 21 2 12z" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="20" cy="12" r="5"/></symbol>
+  </defs>
+</svg>
+
+<canvas id="stage" aria-hidden="true"></canvas>
+<div id="lens-label" aria-hidden="true">ЛУПА · кадр без обработки</div>
+
+<!-- Лента самописца — прогресс чтения -->
+<nav class="tape" aria-label="Лента самописца: главы">
+  <canvas id="tape-canvas" aria-hidden="true"></canvas>
+  <ol class="tape-marks">
+    <li><a href="#ch1" title="1 · Засыпание">1</a></li>
+    <li><a href="#ch2" title="2 · Часы организма">2</a></li>
+    <li><a href="#ch3" title="3 · Стадии сна">3</a></li>
+    <li><a href="#ch4" title="4 · Глубокий сон">4</a></li>
+    <li><a href="#ch5" title="5 · Уборка">5</a></li>
+    <li><a href="#ch6" title="6 · Быстрый сон">6</a></li>
+    <li><a href="#ch7" title="7 · Память">7</a></li>
+    <li><a href="#ch8" title="8 · Цикл за ночь">8</a></li>
+    <li><a href="#ch9" title="9 · Недосып">9</a></li>
+    <li><a href="#ch10" title="10 · Финал">10</a></li>
+    <li><a href="#app-a" title="Приложения">А</a></li>
+  </ol>
+</nav>
+
+<!-- Самописец в углу -->
+<figure class="recorder" aria-label="Энцефалограмма-самописец">
+  <canvas id="recorder-canvas" width="300" height="120" aria-hidden="true"></canvas>
+  <figcaption><span class="rec-dot" aria-hidden="true"></span> <span class="rec-pre">Самописец · </span><span id="rec-stage">бодрствование</span></figcaption>
+</figure>
+
+<div class="modes" role="group" aria-label="Режим изображения">
+  <button type="button" data-mode="print" aria-pressed="true">Печать</button>
+  <button type="button" data-mode="blueprint" aria-pressed="false">Чертёж</button>
+</div>
+
+<main id="top">
+
+<!-- ============ ОБЛОЖКА ============ -->
+<header class="cover" data-scene="0">
+  <div class="masthead">
+    <span>Научно-популярный атлас</span>
+    <span>Выпуск № 1 · Ночной</span>
+    <span>Для широкого круга читателей</span>
+  </div>
+  <div class="cover-grid">
+    <div class="cover-title">
+      <p class="over">Сон и мозг: что происходит ночью</p>
+      <h1 class="mega"><span>Ночная</span> <span>смена</span></h1>
+      <p class="lead">Пока тело лежит неподвижно, мозг работает во вторую смену: переводит часы, наводит порядок, раскладывает воспоминания по полкам. Десять глав о том, как это устроено, — и восемь вкладок с цифрами, картами и советами.</p>
+      <p class="how">Листайте вниз — камера поплывёт по мозгу, как в научно-популярном фильме. Наведите курсор на рисунок — <b>лупа</b> покажет кадр без печатной обработки. Кнопка вверху справа переключает <b>печать</b> и <b>чертёж</b>.</p>
+    </div>
+    <div class="cover-third" aria-label="Около трети жизни человек проводит во сне">
+      <span class="third-num" aria-hidden="true">⅓</span>
+      <span class="third-cap">жизни — около трети — человек проводит во сне</span>
+    </div>
+  </div>
+  <p class="band" aria-hidden="true"><span>Человек познаёт себя</span></p>
+  <section class="legend-ev" aria-labelledby="ev-title">
+    <h2 id="ev-title" class="sub">Как читать пометки</h2>
+    <ul>
+      <li><span class="ev ev-sure">● Наука уверена</span> — много согласующихся исследований на людях.</li>
+      <li><span class="ev ev-debate">◐ Есть споры</span> — данные противоречат друг другу или толкуются по-разному.</li>
+      <li><span class="ev ev-animal">▲ На животных</span> — получено в основном на мышах, крысах, кошках.</li>
+      <li><span class="ev ev-limited">○ Мало данных</span> — небольшие выборки, нужны проверки.</li>
+    </ul>
+  </section>
+  <nav class="toc" aria-labelledby="toc-title">
+    <h2 id="toc-title" class="sub">Содержание</h2>
+    <ol class="toc-ch">
+      <li><a href="#ch1"><b>01</b> Засыпание</a></li>
+      <li><a href="#ch2"><b>02</b> Часы организма</a></li>
+      <li><a href="#ch3"><b>03</b> Стадии сна N1–N3</a></li>
+      <li><a href="#ch4"><b>04</b> Глубокий сон</a></li>
+      <li><a href="#ch5"><b>05</b> Уборка</a></li>
+      <li><a href="#ch6"><b>06</b> Быстрый сон</a></li>
+      <li><a href="#ch7"><b>07</b> Память</a></li>
+      <li><a href="#ch8"><b>08</b> Цикл за ночь</a></li>
+      <li><a href="#ch9"><b>09</b> Недосып</a></li>
+      <li><a href="#ch10"><b>10</b> Доброе утро</a></li>
+    </ol>
+    <ol class="toc-app">
+      <li><a href="#app-a"><b>А</b> Сколько спать</a></li>
+      <li><a href="#app-b"><b>Б</b> Хроника открытий</a></li>
+      <li><a href="#app-v"><b>В</b> Карта мира</a></li>
+      <li><a href="#app-g"><b>Г</b> Хронотипы</a></li>
+      <li><a href="#app-d"><b>Д</b> Рекорды и курьёзы</a></li>
+      <li><a href="#app-e"><b>Е</b> Гигиена сна</a></li>
+      <li><a href="#app-zh"><b>Ж</b> Когда к врачу</a></li>
+      <li><a href="#app-z"><b>З</b> Словарь и источники</a></li>
+    </ol>
+  </nav>
+</header>
+
+<!-- ============ ГЛАВЫ ============ -->
+<div class="chapters">
+
+<!-- 1 -->
+<section class="chapter" id="ch1" data-scene="1" aria-labelledby="h-ch1">
+  <article class="panel">
+    <header class="ch-head">
+      <span class="ch-num" aria-hidden="true">01</span>
+      <div><p class="kicker">Глава первая</p><h2 id="h-ch1">Засыпание</h2><p class="deck">День гаснет, а в мозге копится «давление сна»</p></div>
+    </header>
+    <p>Бодрствование стоит мозгу энергии. Работающие нейроны расходуют АТФ, и один из продуктов её распада — <b>аденозин</b> — постепенно накапливается в межклеточном пространстве. Аденозин связывается со своими рецепторами и приглушает системы, которые поддерживают бодрость. Чем дольше мы не спим, тем сильнее тянет в сон.</p>
+    <p>Швейцарский исследователь Александр Борбели в 1982 году описал это как <b>«процесс S»</b> — давление сна, которое растёт днём и сбрасывается ночью. Вместе с суточными часами («процесс C», о нём — в следующей главе) он решает, когда нам хочется спать. Аденозин — важный, но не единственный участник этого процесса.</p>
+    <p>Кофеин похож на аденозин по форме и занимает его рецепторы. Усталость никуда не девается — сигнал о ней просто временно не доходит.</p>
+    <figure class="fig fig-thermo">
+      <svg viewBox="0 0 320 330" role="img" aria-labelledby="fig1-t">
+        <title id="fig1-t">Шкала-термометр давления сна: растёт от утра к вечеру</title>
+        <rect class="hatch-bg" x="112" y="18" width="36" height="250" rx="18"/>
+        <rect class="thermo-tube" x="112" y="18" width="36" height="250" rx="18"/>
+        <rect id="thermo-fill" class="ink-ochre" x="118" y="262" width="24" height="0" rx="10"/>
+        <circle class="ink-ochre" cx="130" cy="286" r="28"/>
+        <circle class="thermo-tube" cx="130" cy="286" r="28"/>
+        <g class="ticks">
+          <path d="M150 262h14M150 212h10M150 162h14M150 112h10M150 62h14" />
+          <text x="170" y="266">0 ч</text><text x="170" y="166">8 ч</text><text x="170" y="66">16 ч</text>
+        </g>
+        <text class="fig-lab" x="8" y="266">а</text><path class="draw callout" pathLength="1" d="M22 262 H104"/>
+        <text class="fig-lab" x="8" y="66">б</text><path class="draw callout" pathLength="1" d="M22 62 H104"/>
+        <text class="fig-small" x="18" y="290">утро</text><text class="fig-small" x="18" y="90">вечер</text>
+        <text class="fig-big" x="214" y="170"><tspan id="thermo-hours">0</tspan></text>
+        <text class="fig-small" x="214" y="194">часов</text>
+        <text class="fig-small" x="214" y="214">без сна</text>
+      </svg>
+      <figcaption><b>Рис. 1.</b> Давление сна. <b>а</b> — утром после сна «столбик» низкий; <b>б</b> — к вечеру, после 16 часов бодрствования, высокий. Ночной сон сбрасывает шкалу. Схема, не масштаб.</figcaption>
+    </figure>
+    <aside class="vrezka stamp" aria-label="Любопытно знать">
+      <p class="vr-title">Любопытно знать</p>
+      <p>Кофе, выпитый даже <b><span data-count="6">6</span> часов</b> до сна, в небольшом эксперименте сокращал сон примерно на час по данным прибора — хотя сами участники этого почти не замечали.</p>
+      <p class="vr-src">Drake et al., 2013 · 12 человек <span class="ev ev-limited">○ Мало данных</span></p>
+      <p>Рост аденозина при долгом бодрствовании напрямую измерили в мозге кошек.</p>
+      <p class="vr-src">Porkka-Heiskanen et al., 1997 <span class="ev ev-animal">▲ На животных</span></p>
+    </aside>
+  </article>
+</section>
+
+<!-- 2 -->
+<section class="chapter" id="ch2" data-scene="2" aria-labelledby="h-ch2">
+  <article class="panel">
+    <header class="ch-head">
+      <span class="ch-num" aria-hidden="true">02</span>
+      <div><p class="kicker">Глава вторая</p><h2 id="h-ch2">Часы организма</h2><p class="deck">Свет, мелатонин и маленький командный пункт над перекрестом зрительных нервов</p></div>
+    </header>
+    <p>Главные часы организма — <b>супрахиазматическое ядро</b> (СХЯ) гипоталамуса. Это парное скопление нейронов размером с рисовое зёрнышко, лежащее прямо над перекрестом зрительных нервов. Внутри каждой его клетки работает молекулярный маятник из «часовых» генов — за его открытие в 2017 году дали Нобелевскую премию (Холл, Росбаш, Янг).</p>
+    <p>Часы не идеальны: без солнца и циферблата внутренние сутки человека длятся в среднем около <b>24,2 часа</b>. Каждое утро их подводит свет. Особые клетки сетчатки с пигментом <b>меланопсином</b> особенно чувствительны к сине-голубому свету и сообщают СХЯ, что наступил день.</p>
+    <p>Вечером, в темноте, СХЯ «разрешает» шишковидной железе (эпифизу) выпускать <b>мелатонин</b>. Он не усыпляет, как снотворное, а скорее объявляет организму: «наступила биологическая ночь». Яркий свет вечером выработку мелатонина подавляет.</p>
+    <figure class="fig fig-dial">
+      <svg viewBox="0 0 340 340" role="img" aria-labelledby="fig2-t">
+        <title id="fig2-t">Циферблат на 24 часа: ночь, волна мелатонина и точка минимума температуры тела</title>
+        <g transform="translate(170 170)">
+          <circle class="dial-face" r="150"/>
+          <path id="dial-night" class="hatch-blue" d=""/>
+          <path id="dial-mel" class="ink-blue-soft" d=""/>
+          <g id="dial-ticks"></g>
+          <g class="dial-sun" transform="translate(0 -104)"><use href="#pic-sun" x="-14" y="-14" width="28" height="28"/></g>
+          <g class="dial-moon" transform="translate(0 104)"><use href="#pic-moon" x="-11" y="-11" width="22" height="22"/></g>
+          <circle class="ink-red" id="dial-tmin" r="6"/>
+          <g id="dial-hand"><path class="hand" d="M0 12 L0 -128"/><circle class="ink-red" r="7"/></g>
+        </g>
+        <text class="fig-lab" x="296" y="40">а</text>
+        <text class="fig-lab" x="24" y="40">б</text>
+        <text class="fig-lab" x="24" y="318">в</text>
+      </svg>
+      <p class="dial-readout">На циферблате: <b id="dial-time">18:00</b> — <span id="dial-note">вечер, свет ещё сдерживает мелатонин</span></p>
+      <figcaption><b>Рис. 2.</b> Сутки на одном циферблате (полдень вверху). <b>а</b> — утренний свет подводит часы; <b>б</b> — мелатонин (синяя волна) растёт вечером, примерно за два часа до обычного отхода ко сну; <b>в</b> — минимум температуры тела (красная точка) — за 1–2 часа до привычного пробуждения. Время условное, у каждого сдвинуто по-своему. Стрелка движется при прокрутке.</figcaption>
+    </figure>
+    <aside class="vrezka stamp" aria-label="Любопытно знать">
+      <p class="vr-title">Любопытно знать</p>
+      <p>В опытах с изоляцией от солнца период внутренних часов человека оказался <b><span data-count="24.2" data-dec="1">24,2</span> часа</b> — и удивительно стабилен у одного и того же человека.</p>
+      <p class="vr-src">Czeisler et al., 1999 <span class="ev ev-sure">● Наука уверена</span></p>
+    </aside>
+  </article>
+</section>
+
+<!-- 3 -->
+<section class="chapter" id="ch3" data-scene="3" aria-labelledby="h-ch3">
+  <article class="panel">
+    <header class="ch-head">
+      <span class="ch-num" aria-hidden="true">03</span>
+      <div><p class="kicker">Глава третья</p><h2 id="h-ch3">Стадии сна N1–N3</h2><p class="deck">Медленный сон — это три ступени вниз</p></div>
+    </header>
+    <p>Сон делят на <b>медленный</b> (NREM) и <b>быстрый</b> (REM). Медленный, по современному руководству Американской академии медицины сна (2007), имеет три стадии. Раньше их было четыре — по руководству Рехтшаффена и Кейлса 1968 года; третью и четвёртую объединили в N3.</p>
+    <ul class="stages">
+      <li><b>N1 — дремота.</b> Альфа-ритм спокойного бодрствования (8–12 Гц) сменяется более медленным тета-ритмом (4–7 Гц), глаза медленно «плавают». Обычно длится минуты и занимает около 5% ночи.</li>
+      <li><b>N2 — лёгкий сон.</b> Появляются <b>сонные веретёна</b> — короткие вспышки 11–16 Гц — и крупные одиночные волны, <b>K-комплексы</b>. Самая «длинная» стадия: около половины ночи.</li>
+      <li><b>N3 — глубокий сон.</b> Медленные волны 0,5–2 Гц высотой больше 75 микровольт занимают не менее пятой части записи. У молодых N3 — около 15–25% ночи, с возрастом её становится меньше.</li>
+    </ul>
+    <figure class="fig fig-eeg">
+      <canvas id="eeg-strip" width="640" height="300" role="img" aria-label="Анимированная энцефалограмма: бодрствование, N1, N2 с веретеном и K-комплексом, N3 с медленными волнами"></canvas>
+      <figcaption><b>Рис. 3.</b> Лента самописца. Четыре дорожки — четыре состояния: бодрствование (альфа), N1 (тета), N2 (<b>а</b> — веретено, <b>б</b> — K-комплекс), N3 (<b>в</b> — медленные волны). Сигналы смоделированы по учебным описаниям, это не запись реального пациента.</figcaption>
+    </figure>
+    <aside class="vrezka stamp" aria-label="Любопытно знать">
+      <p class="vr-title">Любопытно знать</p>
+      <p>Резкое вздрагивание при засыпании — <b>гипнагогический миоклонус</b> — очень распространено у здоровых людей и само по себе безвредно. Частота в опросах разная, но это одно из самых обычных ощущений на границе сна.</p>
+      <p class="vr-src">ICSD-3, Американская академия медицины сна <span class="ev ev-sure">● Наука уверена</span></p>
+    </aside>
+  </article>
+</section>
+
+<!-- 4 -->
+<section class="chapter" id="ch4" data-scene="4" aria-labelledby="h-ch4">
+  <article class="panel">
+    <header class="ch-head">
+      <span class="ch-num" aria-hidden="true">04</span>
+      <div><p class="kicker">Глава четвёртая</p><h2 id="h-ch4">Глубокий сон</h2><p class="deck">Миллиарды нейронов работают в унисон</p></div>
+    </header>
+    <p>В стадии N3 огромные популяции нейронов коры синхронно переключаются между «активным» и «тихим» состоянием — примерно раз в секунду или реже. Это <b>медленные осцилляции</b>: на энцефалограмме они выглядят как высокие плавные волны.</p>
+    <p>Каждая такая волна не вспыхивает везде сразу, а бежит по коре. Чаще всего она зарождается в лобных отделах и катится к затылку — это показали записи с сотни с лишним электродов на голове спящих людей.</p>
+    <p>Глубокого сна больше в первой половине ночи. После бессонной ночи его доля растёт: мозг «отдаёт долг». Из N3 труднее всего проснуться, а разбуженный человек бывает несколько минут растерян — это <b>инерция сна</b>.</p>
+    <figure class="fig fig-wave">
+      <svg viewBox="0 0 360 230" role="img" aria-labelledby="fig4-t">
+        <title id="fig4-t">Медленная волна бежит по коре ото лба к затылку</title>
+        <path class="brain-sil" d="M60 150 C40 110 60 50 130 38 C190 22 270 36 305 82 C330 115 318 160 285 170 C270 190 240 196 215 186 C200 205 170 206 160 190 C120 196 80 185 60 150Z"/>
+        <path class="hatch-bg" d="M232 180 C250 200 280 196 292 176 C284 186 256 190 232 180Z"/>
+        <g class="wavefronts">
+          <path class="wf" d="M300 70 C285 110 285 140 300 170"/>
+          <path class="wf" d="M300 70 C285 110 285 140 300 170"/>
+          <path class="wf" d="M300 70 C285 110 285 140 300 170"/>
+        </g>
+        <path class="draw arrow-line" pathLength="1" d="M300 20 H70"/>
+        <path class="arrow-head" d="M70 12 L54 20 L70 28Z"/>
+        <text class="fig-lab" x="304" y="112">а</text>
+        <text class="fig-lab" x="178" y="60">б</text>
+        <text class="fig-lab" x="46" y="110">в</text>
+        <text class="fig-small" x="112" y="14">направление волны</text>
+        <text class="fig-small" x="250" y="222">лоб</text><text class="fig-small" x="46" y="222">затылок</text>
+      </svg>
+      <figcaption><b>Рис. 4.</b> Бегущая медленная волна, вид сбоку (лоб справа). <b>а</b> — чаще всего волна рождается в лобной коре; <b>б</b> — проходит через теменную область; <b>в</b> — затухает у затылка. На 3D-модели та же волна показана красным.</figcaption>
+    </figure>
+    <aside class="vrezka stamp" aria-label="Любопытно знать">
+      <p class="vr-title">Любопытно знать</p>
+      <p>Медленная волна пересекает кору со скоростью порядка <b>нескольких метров в секунду</b> — от лба до затылка ей нужно около десятой доли секунды.</p>
+      <p class="vr-src">Massimini et al., 2004 · ЭЭГ высокой плотности, люди <span class="ev ev-sure">● Наука уверена</span></p>
+    </aside>
+  </article>
+</section>
+
+<!-- 5 -->
+<section class="chapter" id="ch5" data-scene="5" aria-labelledby="h-ch5">
+  <article class="panel">
+    <header class="ch-head">
+      <span class="ch-num" aria-hidden="true">05</span>
+      <div><p class="kicker">Глава пятая</p><h2 id="h-ch5">Уборка</h2><p class="deck">Моет ли мозг себя по ночам? Осторожная глава</p></div>
+    </header>
+    <p class="caution"><b>Внимание, открытый вопрос.</b> Идея ночной «промывки» мозга очень популярна, но большая часть данных получена на мышах, а новые опыты дают противоречивые результаты.</p>
+    <p>В тканях тела отходы уносит лимфа, а внутри мозга классических лимфатических сосудов нет. В 2012 году группа Майкен Недергаард описала на мышах <b>глимфатическую систему</b>: спинномозговая жидкость входит в мозг вдоль артерий, проходит через ткань с помощью водных каналов аквапорина-4 в оболочке клеток-астроцитов и уходит вдоль вен, унося продукты обмена.</p>
+    <p>В 2013 году та же группа сообщила: у спящих мышей межклеточное пространство расширяется примерно на 60%, а белок β-амилоид выводится быстрее. У людей во время медленного сна действительно видны мощные волны притока спинномозговой жидкости (2019). Но в 2024 году другая лаборатория на мышах получила обратное: во сне и под наркозом краситель из мозга выводился <b>медленнее</b>. Спор продолжается.</p>
+    <figure class="fig fig-glymph">
+      <svg viewBox="0 0 360 230" role="img" aria-labelledby="fig5-t">
+        <title id="fig5-t">Схема глимфатического тока: жидкость вдоль артерии, через ткань, к вене</title>
+        <rect class="hatch-bg" x="10" y="40" width="340" height="150"/>
+        <path class="vessel-a" d="M10 70 H350" />
+        <path class="vessel-v" d="M10 164 H350" />
+        <path class="pvs" d="M10 52 H350 M10 88 H350 M10 146 H350 M10 182 H350"/>
+        <g class="flow">
+          <path class="draw" pathLength="1" d="M40 96 C60 120 70 130 80 140"/>
+          <path class="draw" pathLength="1" d="M130 96 C150 120 160 130 170 140"/>
+          <path class="draw" pathLength="1" d="M220 96 C240 120 250 130 260 140"/>
+          <path class="draw" pathLength="1" d="M300 96 C315 115 325 128 330 140"/>
+        </g>
+        <circle class="astro" cx="104" cy="117" r="9"/><circle class="astro" cx="194" cy="117" r="9"/><circle class="astro" cx="284" cy="117" r="9"/>
+        <text class="fig-small" x="14" y="30">артерия и околососудистое пространство</text>
+        <text class="fig-small" x="14" y="214">вена: жидкость уходит</text>
+        <text class="fig-lab" x="332" y="66">а</text><text class="fig-lab" x="208" y="122">б</text><text class="fig-lab" x="332" y="160">в</text>
+      </svg>
+      <figcaption><b>Рис. 5.</b> Гипотеза глимфатического тока. <b>а</b> — спинномозговая жидкость вдоль артерии; <b>б</b> — через ткань мимо астроцитов с каналами аквапорина-4; <b>в</b> — к венам. Схема по работам на мышах; как именно это устроено у человека и насколько зависит от сна — не установлено.</figcaption>
+    </figure>
+    <aside class="vrezka stamp" aria-label="Любопытно знать">
+      <p class="vr-title">Любопытно знать</p>
+      <p>Межклеточное пространство мозга у спящих мышей в опытах 2013 года было больше на <b><span data-count="60">60</span>%</b>, чем у бодрствующих. Повторить это и перенести на человека — задача ближайших лет.</p>
+      <p class="vr-src">Xie et al., 2013 <span class="ev ev-animal">▲ На животных</span> · Miao et al., 2024 <span class="ev ev-debate">◐ Есть споры</span></p>
+      <p>У людей одна ночь без сна замедляла выведение контрастного вещества из мозга — но это небольшое исследование пациентов, которым вещество вводили по медицинским показаниям.</p>
+      <p class="vr-src">Eide et al., 2021 <span class="ev ev-limited">○ Мало данных</span></p>
+    </aside>
+  </article>
+</section>
+
+<!-- 6 -->
+<section class="chapter" id="ch6" data-scene="6" aria-labelledby="h-ch6">
+  <article class="panel">
+    <header class="ch-head">
+      <span class="ch-num" aria-hidden="true">06</span>
+      <div><p class="kicker">Глава шестая</p><h2 id="h-ch6">Быстрый сон</h2><p class="deck">Мозг бодр, тело выключено, глаза бегают</p></div>
+    </header>
+    <p>В 1953 году в Чикаго аспирант Юджин Азеринский и его руководитель Натаниэль Клейтман заметили, что несколько раз за ночь глаза спящего начинают быстро двигаться под веками. Так открыли <b>быстрый сон</b> — REM (от англ. <i>rapid eye movements</i>). Французский физиолог Мишель Жуве назвал его «парадоксальным»: энцефалограмма похожа на бодрствование, а разбудить человека не легче, чем в медленном сне.</p>
+    <p>Во время REM сигналы из ствола мозга тормозят двигательные нейроны спинного мозга, и мышцы тела почти полностью расслабляются — это <b>атония</b>. Работают только дыхательная диафрагма и мышцы глаз. Если «выключатель» ломается, человек может разыгрывать сны движениями — это отдельное расстройство, с ним идут к неврологу или сомнологу.</p>
+    <p>Самые яркие, сюжетные сновидения чаще всего бывают в быстром сне, но сны снятся и в медленном. У взрослых REM занимает примерно пятую-четверть ночи, у новорождённых — около половины сна.</p>
+    <figure class="fig fig-rem">
+      <svg viewBox="0 0 360 200" role="img" aria-labelledby="fig6-t">
+        <title id="fig6-t">Спящий человек в быстром сне: движутся глаза и дыхание, мышцы тела расслаблены</title>
+        <path class="bed" d="M20 150 H340 V170 H20Z"/>
+        <use href="#pic-sleeper" x="40" y="70" width="280" height="84" class="ink-blue-fill"/>
+        <g class="rem-eyes"><path class="draw zig" pathLength="1" d="M60 40 l10 -10 l10 10 l10 -10 l10 10 l10 -10"/></g>
+        <text class="fig-lab" x="40" y="30">а</text>
+        <text class="fig-lab" x="160" y="60">б</text><path class="draw callout" pathLength="1" d="M172 56 L190 90"/>
+        <text class="fig-lab" x="270" y="60">в</text><path class="draw callout" pathLength="1" d="M268 64 L250 96"/>
+        <text class="fig-small" x="182" y="40">дыхание сохраняется</text>
+        <text class="fig-small" x="220" y="194">атония мышц</text>
+      </svg>
+      <figcaption><b>Рис. 6.</b> Быстрый сон. <b>а</b> — быстрые движения глаз; <b>б</b> — диафрагма продолжает дышать; <b>в</b> — мышцы рук и ног расслаблены (атония), поэтому мы не «проживаем» сны телом.</figcaption>
+    </figure>
+    <aside class="vrezka stamp" aria-label="Любопытно знать">
+      <p class="vr-title">Любопытно знать</p>
+      <p>Сонный паралич — когда атония быстрого сна ненадолго задерживается после пробуждения — хотя бы раз в жизни переживали примерно <b><span data-count="8">8</span>%</b> людей. Это пугает, но обычно безвредно.</p>
+      <p class="vr-src">Sharpless &amp; Barber, 2011 · обзор 35 исследований <span class="ev ev-sure">● Наука уверена</span></p>
+    </aside>
+  </article>
+</section>
+
+<!-- 7 -->
+<section class="chapter" id="ch7" data-scene="7" aria-labelledby="h-ch7">
+  <article class="panel">
+    <header class="ch-head">
+      <span class="ch-num" aria-hidden="true">07</span>
+      <div><p class="kicker">Глава седьмая</p><h2 id="h-ch7">Память</h2><p class="deck">Ночной архивариус переносит карточки из гиппокампа в кору</p></div>
+    </header>
+    <p>Согласно гипотезе <b>системной консолидации</b>, свежие события дня сначала быстро записывает гиппокамп — «входящий ящик» памяти. Ночью, в медленном сне, записи постепенно переносятся в кору, где хранятся долго.</p>
+    <p>В 1994 году Мэтью Уилсон и Брюс Макнотон увидели, как нейроны гиппокампа спящих крыс «проигрывают» дневные маршруты по лабиринту в том же порядке. Сейчас считается, что перенос обеспечивает согласованная работа трёх ритмов: медленных осцилляций коры, сонных веретён и коротких гиппокампальных «рябей».</p>
+    <p>У людей тоже есть прямые данные: если во время обучения давать запах, а потом повторить его в медленном сне, запоминание улучшается. Общая картина хорошо подкреплена, но детали — например, роль быстрого сна — остаются предметом споров.</p>
+    <figure class="fig fig-archive">
+      <div class="archive" role="group" aria-label="Архив памяти: нажмите на ящик">
+        <div class="cabinet">
+          <p class="cab-title">Гиппокамп · входящие</p>
+          <button class="drawer" type="button" aria-expanded="false"><span class="drawer-label">Ящик а · сегодня</span><span class="drawer-card">Где оставил ключи. Имя нового коллеги. Маршрут до библиотеки.</span></button>
+          <button class="drawer" type="button" aria-expanded="false"><span class="drawer-label">Ящик б · вчера</span><span class="drawer-card">Новое слово на иностранном языке. Последовательность аккордов.</span></button>
+        </div>
+        <div class="archive-arrow" aria-hidden="true"><svg viewBox="0 0 80 40"><path class="draw arrow-line" pathLength="1" d="M4 20 H62"/><path class="arrow-head" d="M60 10 L78 20 L60 30Z"/></svg><span>ночью</span></div>
+        <div class="cabinet cabinet-cortex">
+          <p class="cab-title">Кора · постоянное хранение</p>
+          <button class="drawer" type="button" aria-expanded="false"><span class="drawer-label">Ящик в · знания</span><span class="drawer-card">Суть без подробностей: «в библиотеку — через парк». Детали со временем стираются.</span></button>
+          <button class="drawer" type="button" aria-expanded="false"><span class="drawer-label">Ящик г · навыки</span><span class="drawer-card">Аккорды «ложатся в пальцы»: после сна навык часто выполняется точнее.</span></button>
+        </div>
+      </div>
+      <figcaption><b>Рис. 7.</b> Картотека памяти (упрощение). Нажмите на ящик, чтобы выдвинуть карточку. Реальный перенос не «копирование», а постепенная перестройка связей.</figcaption>
+    </figure>
+    <aside class="vrezka stamp" aria-label="Любопытно знать">
+      <p class="vr-title">Любопытно знать</p>
+      <p>Во сне крысы «прокручивают» дневной маршрут в сжатом виде — в <b>разы быстрее</b>, чем пробежали его наяву.</p>
+      <p class="vr-src">Wilson &amp; McNaughton, 1994 и последующие работы <span class="ev ev-animal">▲ На животных</span></p>
+      <p>Запах-подсказка в медленном сне улучшал запоминание расположения карточек у людей.</p>
+      <p class="vr-src">Rasch et al., 2007 <span class="ev ev-debate">◐ Есть споры</span> — эффект воспроизводится не всегда</p>
+    </aside>
+  </article>
+</section>
+
+<!-- 8 -->
+<section class="chapter" id="ch8" data-scene="8" aria-labelledby="h-ch8">
+  <article class="panel">
+    <header class="ch-head">
+      <span class="ch-num" aria-hidden="true">08</span>
+      <div><p class="kicker">Глава восьмая</p><h2 id="h-ch8">Цикл за ночь</h2><p class="deck">Четыре–шесть витков вниз и обратно</p></div>
+    </header>
+    <p>Ночь — не одна длинная «яма», а лестница, по которой мы несколько раз спускаемся и поднимаемся. Цикл «медленный сон — быстрый сон» длится в среднем около <b>90 минут</b> (от 70 до 120), за ночь их набирается <b>4–6</b>. Это впервые описали Уильям Демент и Натаниэль Клейтман в 1957 году.</p>
+    <p>Первые циклы богаты глубоким сном N3. Под утро N3 почти исчезает, зато эпизоды быстрого сна удлиняются — поэтому сны, которые мы помним, обычно утренние. Короткие пробуждения между циклами нормальны: большинство из них мы не запоминаем.</p>
+    <figure class="fig fig-hypno">
+      <svg id="hypno" viewBox="0 0 640 260" role="img" aria-labelledby="fig8-t">
+        <title id="fig8-t">Гипнограмма типичной ночи: пять циклов, глубокий сон в начале, быстрый сон удлиняется к утру</title>
+      </svg>
+      <figcaption><b>Рис. 8.</b> Гипнограмма — «лестница сна» условной ночи с 23:00 до 06:30. <b>а</b> — глубокий сон N3 сосредоточен в первых циклах; <b>б</b> — эпизоды быстрого сна (красные) к утру длиннее; <b>в</b> — короткие пробуждения. Схема обобщённая, у каждого человека — своя.</figcaption>
+    </figure>
+    <aside class="vrezka stamp" aria-label="Любопытно знать">
+      <p class="vr-title">Любопытно знать</p>
+      <p>Примерная доля стадий у здорового взрослого: <b>N1 ≈ <span data-count="5">5</span>%</b>, <b>N2 ≈ <span data-count="50">50</span>%</b>, <b>N3 ≈ <span data-count="20">20</span>%</b>, <b>REM ≈ <span data-count="20">20</span>–25%</b>. С возрастом глубокого сна становится меньше.</p>
+      <p class="vr-src">Ohayon et al., 2004 · мета-анализ <span class="ev ev-sure">● Наука уверена</span></p>
+    </aside>
+  </article>
+</section>
+
+<!-- 9 -->
+<section class="chapter" id="ch9" data-scene="9" aria-labelledby="h-ch9">
+  <article class="panel">
+    <header class="ch-head">
+      <span class="ch-num" aria-hidden="true">09</span>
+      <div><p class="kicker">Глава девятая</p><h2 id="h-ch9">Недосып</h2><p class="deck">Что ломается, когда ночная смена сорвана</p></div>
+    </header>
+    <p>Взрослым для здоровья рекомендуют спать <b>7 часов и больше</b> (Американская академия медицины сна и Общество исследований сна, 2015). Хронический недосып опасен тем, что его плохо чувствуешь изнутри.</p>
+    <div class="breaks">
+      <div class="break stamp">
+        <svg viewBox="0 0 40 24" class="break-ico" aria-hidden="true"><use href="#pic-eye"/></svg>
+        <p class="break-num"><span data-count="14">14</span> ночей</p>
+        <p class="break-h">Внимание</p>
+        <p>По 6 часов сна 14 ночей подряд — и внимание падает до уровня одной-двух ночей без сна. Сами участники считали, что почти в норме.</p>
+        <p class="vr-src">Van Dongen et al., 2003 <span class="ev ev-sure">● Уверена</span></p>
+      </div>
+      <div class="break stamp">
+        <svg viewBox="0 0 40 40" class="break-ico" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="13" cy="15" r="2.5"/><circle cx="27" cy="15" r="2.5"/><path d="M11 30c5-6 13-6 18 0" fill="none" stroke="currentColor" stroke-width="3"/></svg>
+        <p class="break-num">+<span data-count="60">60</span>%</p>
+        <p class="break-h">Настроение</p>
+        <p>После ночи без сна миндалина — «сигнализация» эмоций — реагировала на неприятные картинки сильнее, а её связь с лобной корой ослабевала.</p>
+        <p class="vr-src">Yoo et al., 2007 · 26 человек <span class="ev ev-limited">○ Мало данных</span></p>
+      </div>
+      <div class="break stamp">
+        <svg viewBox="0 0 40 40" class="break-ico" aria-hidden="true"><path d="M8 14l12-7 12 7v14l-12 7-12-7z" fill="none" stroke="currentColor" stroke-width="3"/><path d="M8 14l12 7 12-7M20 21v14" fill="none" stroke="currentColor" stroke-width="3"/></svg>
+        <p class="break-num"><span data-count="6">6</span> × 4 ч</p>
+        <p class="break-h">Обмен веществ</p>
+        <p>Шесть ночей по 4 часа в постели ухудшили у здоровых молодых мужчин обработку глюкозы; после отсыпания показатели вернулись.</p>
+        <p class="vr-src">Spiegel et al., 1999 · 11 человек <span class="ev ev-limited">○ Мало данных</span></p>
+      </div>
+    </div>
+    <p>За рулём 17–19 часов без сна ухудшают реакцию примерно так же, как 0,5 промилле алкоголя в крови; сутки без сна — как около 1 промилле. Долговременная связь короткого сна с ожирением, диабетом 2 типа и болезнями сердца видна в больших наблюдательных исследованиях, но там трудно отделить причину от следствия.</p>
+    <aside class="vrezka stamp" aria-label="Любопытно знать">
+      <p class="vr-title">Любопытно знать</p>
+      <p><b>Микросон</b> — провал в сон на несколько секунд — может случиться с открытыми глазами, и человек часто его не замечает. Если за рулём клонит в сон, единственное надёжное средство — остановиться и отдохнуть.</p>
+      <p class="vr-src">Dawson &amp; Reid, 1997; Williamson &amp; Feyer, 2000 <span class="ev ev-sure">● Наука уверена</span></p>
+    </aside>
+  </article>
+</section>
+
+<!-- 10 -->
+<section class="chapter" id="ch10" data-scene="10" aria-labelledby="h-ch10">
+  <article class="panel panel-final">
+    <header class="ch-head">
+      <span class="ch-num" aria-hidden="true">10</span>
+      <div><p class="kicker">Глава десятая</p><h2 id="h-ch10">Спокойной ночи, товарищ мозг</h2><p class="deck">…и доброе утро</p></div>
+    </header>
+    <div class="sunrise" aria-hidden="true"><svg viewBox="0 0 360 140"><g class="rays"><path d="M180 140 L20 20 L60 10Z"/><path d="M180 140 L110 0 L150 0Z"/><path d="M180 140 L210 0 L250 0Z"/><path d="M180 140 L300 10 L340 20Z"/></g><circle class="ink-ochre" cx="180" cy="140" r="64"/><path class="horizon" d="M0 139 H360"/></svg></div>
+    <p>Под утро давление сна сброшено, мелатонин на спаде, внутренние часы готовят организм к подъёму: растёт температура тела, а примерно через полчаса после пробуждения наступает пик гормона кортизола — нормальная часть суточного ритма.</p>
+    <p>За ночь мозг прошёл четыре-пять циклов, разобрал впечатления вчерашнего дня и, возможно, прибрался. Внимание снова острое, настроение ровнее, а сахар в крови под контролем. Ночная смена сдана.</p>
+    <p class="final-slogan">Человек, который понимает свой сон, может его беречь.</p>
+    <aside class="vrezka stamp" aria-label="Любопытно знать">
+      <p class="vr-title">Любопытно знать</p>
+      <p>Утренний подъём кортизола в первые <b><span data-count="30">30</span>–45 минут</b> после пробуждения — нормальная реакция здорового организма, а не признак стресса.</p>
+      <p class="vr-src">Обзоры по «реакции кортизола на пробуждение» <span class="ev ev-sure">● Наука уверена</span></p>
+    </aside>
+  </article>
+</section>
+
+</div><!-- /chapters -->
+
+<!-- ============ ПРИЛОЖЕНИЯ ============ -->
+<div class="appendix">
+  <p class="app-intro"><span>Вкладки журнала</span> Приложения к атласу</p>
+
+  <!-- А -->
+  <section class="tab" id="app-a" aria-labelledby="h-app-a">
+    <header class="tab-head"><span class="tab-letter" aria-hidden="true">А</span><h2 id="h-app-a">Сколько спать по возрастам</h2></header>
+    <p>Рекомендации Национального фонда сна США (2015), подготовленные экспертной группой по обзору исследований. Каждая фигурка — один час сна за сутки (у детей — вместе с дневным сном). Закрашенные — нижняя граница нормы, контурные — сколько ещё укладывается в диапазон.</p>
+    <ol class="ages" id="ages">
+      <li data-min="14" data-max="17"><span class="age">Новорождённые, 0–3 мес</span><span class="icons"></span><span class="hrs">14–17 ч</span></li>
+      <li data-min="12" data-max="15"><span class="age">Младенцы, 4–11 мес</span><span class="icons"></span><span class="hrs">12–15 ч</span></li>
+      <li data-min="11" data-max="14"><span class="age">Малыши, 1–2 года</span><span class="icons"></span><span class="hrs">11–14 ч</span></li>
+      <li data-min="10" data-max="13"><span class="age">Дошкольники, 3–5 лет</span><span class="icons"></span><span class="hrs">10–13 ч</span></li>
+      <li data-min="9" data-max="11"><span class="age">Школьники, 6–13 лет</span><span class="icons"></span><span class="hrs">9–11 ч</span></li>
+      <li data-min="8" data-max="10"><span class="age">Подростки, 14–17 лет</span><span class="icons"></span><span class="hrs">8–10 ч</span></li>
+      <li data-min="7" data-max="9"><span class="age">Молодые взрослые, 18–25</span><span class="icons"></span><span class="hrs">7–9 ч</span></li>
+      <li data-min="7" data-max="9"><span class="age">Взрослые, 26–64</span><span class="icons"></span><span class="hrs">7–9 ч</span></li>
+      <li data-min="7" data-max="8"><span class="age">Пожилые, 65+</span><span class="icons"></span><span class="hrs">7–8 ч</span></li>
+    </ol>
+    <p class="note">Это ориентиры для популяции, а не норма для конкретного человека. Hirshkowitz et al., <i>Sleep Health</i>, 2015 <span class="ev ev-sure">● Наука уверена</span></p>
+  </section>
+
+  <!-- Б -->
+  <section class="tab" id="app-b" aria-labelledby="h-app-b">
+    <header class="tab-head"><span class="tab-letter" aria-hidden="true">Б</span><h2 id="h-app-b">Хроника открытий</h2></header>
+    <ol class="chronicle">
+      <li><span class="yr">1875</span><p>Ричард Катон в Ливерпуле регистрирует электрическую активность мозга кроликов и обезьян.</p></li>
+      <li><span class="yr">1892</span><p>Мария Манасеина выпускает книгу «Сон как треть жизни» и описывает опыты по лишению сна щенков — одни из первых экспериментов о жизненной необходимости сна (по нынешним меркам методически грубые и неэтичные).</p></li>
+      <li><span class="yr">1924</span><p>Ганс Бергер записывает первую электроэнцефалограмму человека (опубликовано в 1929 году) и описывает альфа-ритм.</p></li>
+      <li><span class="yr">1937</span><p>Альфред Лумис с коллегами по ЭЭГ выделяют последовательные стадии сна.</p></li>
+      <li><span class="yr">1953</span><p>Юджин Азеринский и Натаниэль Клейтман открывают быстрый сон (REM).</p></li>
+      <li><span class="yr">1957</span><p>Уильям Демент и Клейтман описывают циклы сна и связь REM со сновидениями.</p></li>
+      <li><span class="yr">1959</span><p>Мишель Жуве в Лионе описывает у кошек «парадоксальный сон» с полным расслаблением мышц.</p></li>
+      <li><span class="yr">1965</span><p>Во Франции и Германии независимо описывают остановки дыхания во сне — синдром апноэ.</p></li>
+      <li><span class="yr">1968</span><p>Рехтшаффен и Кейлс выпускают стандартное руководство по стадиям сна.</p></li>
+      <li><span class="yr">1972</span><p>Две группы в США показывают: разрушение супрахиазматического ядра лишает крыс суточных ритмов.</p></li>
+      <li><span class="yr">1981</span><p>Колин Салливан в Сиднее предлагает лечить апноэ постоянным положительным давлением воздуха (СИПАП).</p></li>
+      <li><span class="yr">1982</span><p>Александр Борбели формулирует двухпроцессную модель регуляции сна.</p></li>
+      <li><span class="yr">1994</span><p>Уилсон и Макнотон видят «повторы» дневного опыта в гиппокампе спящих крыс.</p></li>
+      <li><span class="yr">1998</span><p>Две группы независимо открывают нейропептиды <b>орексины</b> (гипокретины).</p></li>
+      <li><span class="yr">1999–2000</span><p>Нарколепсия связана с орексинами: сначала у собак и мышей, затем у людей находят потерю орексиновых нейронов.</p></li>
+      <li><span class="yr">2002</span><p>Открыты светочувствительные клетки сетчатки с меланопсином, подводящие внутренние часы.</p></li>
+      <li><span class="yr">2007</span><p>Новое руководство AASM: стадии N1, N2, N3 и REM.</p></li>
+      <li><span class="yr">2012–2013</span><p>Описана глимфатическая система и её связь со сном — на мышах.</p></li>
+      <li><span class="yr">2017</span><p>Нобелевская премия за молекулярные механизмы суточных ритмов: Холл, Росбаш, Янг.</p></li>
+      <li><span class="yr">2019</span><p>У спящих людей зарегистрированы волны спинномозговой жидкости, согласованные с медленными волнами ЭЭГ.</p></li>
+      <li><span class="yr">2024</span><p>Опыты на мышах ставят под сомнение ускорение «промывки» мозга во сне — дискуссия продолжается.</p></li>
+    </ol>
+  </section>
+
+  <!-- В -->
+  <section class="tab" id="app-v" aria-labelledby="h-app-v">
+    <header class="tab-head"><span class="tab-letter" aria-hidden="true">В</span><h2 id="h-app-v">Карта мира: сколько спят в разных странах</h2></header>
+    <p class="caution"><b>Данных мало, и они разнородны.</b> Сопоставимых измерений сна по всем странам мира нет. На карте — только страны, для которых мы смогли сверить цифры по двум крупным источникам. Остальные отмечены серым растром: «нет сверенных данных». Мы сознательно не подставляли оценки.</p>
+    <ul class="map-legend">
+      <li><span class="lg lg-oecd"></span> <b>Дневники времени OECD</b> — сколько минут в сутки люди записывают как «сон». Включает время в постели без сна и дневной сон, поэтому цифры выше, чем у приборов. Годы опросов разные (1999–2019).</li>
+      <li><span class="lg lg-app"></span> <b>Приложение ENTRAIN</b> (Walch et al., 2016) — самоотчёты пользователей смартфонов; выборка не представляет всё население.</li>
+      <li><span class="lg lg-none"></span> Нет сверенных данных.</li>
+    </ul>
+    <div class="map-wrap">
+      <canvas id="map" role="img" aria-label="Растровая карта мира со средней продолжительностью сна; данные продублированы в таблице ниже"></canvas>
+      <div id="map-tip" class="map-tip" hidden></div>
+      <p id="map-status" class="map-status">Карта загружается…</p>
+    </div>
+    <p class="note">Наведите курсор или коснитесь страны. Размер точки растра — продолжительность сна.</p>
+    <div class="table-wrap">
+      <table class="data">
+        <caption>Средняя продолжительность сна (значения округлены)</caption>
+        <thead><tr><th scope="col">Страна</th><th scope="col">Часов в сутки</th><th scope="col">Источник</th></tr></thead>
+        <tbody id="map-table"></tbody>
+      </table>
+    </div>
+    <p class="note">Разные выпуски базы OECD для одной страны расходятся на 5–20 минут, поэтому значения даны с точностью до десятой доли часа. Сравнивать строки из разных источников нельзя. Для России, стран Африки (кроме ЮАР), Латинской Америки и многих других в использованных источниках сопоставимых данных нет.</p>
+  </section>
+
+  <!-- Г -->
+  <section class="tab" id="app-g" aria-labelledby="h-app-g">
+    <header class="tab-head"><span class="tab-letter" aria-hidden="true">Г</span><h2 id="h-app-g">Хронотипы: жаворонки и совы</h2></header>
+    <p>Хронотип — насколько рано или поздно «идут» внутренние часы человека. Его удобно измерять по середине сна в свободные дни, когда будильник не мешает (Мюнхенский опросник хронотипа, группа Тиля Рённеберга). В населении хронотипы распределены плавным колоколом: ярко выраженных «жаворонков» и «сов» немного, большинство — посередине, с небольшим перекосом в сторону поздних.</p>
+    <figure class="fig fig-bell">
+      <svg viewBox="0 0 640 280" role="img" aria-labelledby="fig-g-t">
+        <title id="fig-g-t">Колоколообразное распределение хронотипов: жаворонки слева, совы справа, большинство в середине</title>
+        <path id="bell-fill" class="hatch-blue" d=""/>
+        <path id="bell-line" class="draw bell-line" pathLength="1" d=""/>
+        <path class="axis" d="M40 230 H620"/>
+        <g id="bell-ticks"></g>
+        <use href="#pic-lark" x="60" y="120" width="70" height="70" class="ink-ochre-fill"/>
+        <use href="#pic-owl" x="520" y="110" width="70" height="70" class="ink-blue-fill"/>
+        <text class="fig-small" x="58" y="112">жаворонки</text>
+        <text class="fig-small" x="530" y="102">совы</text>
+        <text class="fig-small" x="270" y="40">большинство</text>
+        <text class="fig-small" x="220" y="272">середина сна в выходные (условная шкала)</text>
+      </svg>
+      <figcaption><b>Рис. Г.</b> Распределение хронотипов (схема, форма колокола условная).</figcaption>
+    </figure>
+    <ul class="facts">
+      <li>С возрастом хронотип меняется: дети ранние, к юности часы «уезжают» всё позже — самый поздний хронотип в среднем около 20 лет, — а потом снова сдвигаются к раннему. <span class="ev ev-sure">● Уверена</span> <span class="src">Roenneberg et al., 2004</span></li>
+      <li>Хронотип частично наследуется: в исследовании почти 700 тысяч человек нашли 351 участок генома, связанный с ним. <span class="ev ev-sure">● Уверена</span> <span class="src">Jones et al., 2019</span></li>
+      <li>«Социальный джетлаг» — разница между сном в будни и выходные. У сов он обычно больше, потому что расписание работы и учёбы подстроено под ранних. <span class="ev ev-debate">◐ Последствия для здоровья обсуждаются</span></li>
+    </ul>
+  </section>
+
+  <!-- Д -->
+  <section class="tab" id="app-d" aria-labelledby="h-app-d">
+    <header class="tab-head"><span class="tab-letter" aria-hidden="true">Д</span><h2 id="h-app-d">Рекорды и курьёзы</h2></header>
+    <p class="caution"><b>Не повторять!</b> Эти истории — не подвиги, а предупреждения. Книга рекордов Гиннесса давно не регистрирует рекорды бодрствования из-за риска для здоровья.</p>
+    <div class="labels">
+      <article class="label stamp">
+        <p class="label-top">Этикетка № 1 · 1963–1964</p>
+        <p class="label-num"><span data-count="264">264</span> часа</p>
+        <h3>Рэнди Гарднер: 11 суток без сна</h3>
+        <p>Семнадцатилетний школьник из Сан-Диего не спал ради научной ярмарки; часть времени его наблюдал исследователь сна Уильям Демент. По отчётам — раздражительность, провалы памяти, трудности с концентрацией, зрительные иллюзии. Это наблюдение одного человека, из него нельзя делать вывод, что долгое бодрствование «безопасно».</p>
+        <p class="vr-src">Gulevich, Dement, Johnson, 1966 <span class="ev ev-limited">○ Один случай</span></p>
+      </article>
+      <article class="label stamp">
+        <p class="label-top">Этикетка № 2 · лаборатория</p>
+        <p class="label-num">2–4 недели</p>
+        <h3>Крысы без сна погибали</h3>
+        <p>В экспериментах Аллана Рехтшаффена полное лишение сна приводило крыс к гибели. Ещё в 1890-х похожее сообщала о щенках Мария Манасеина. Жестокие опыты, которые сегодня не повторяют.</p>
+        <p class="vr-src">Rechtschaffen et al., 1983–1989 <span class="ev ev-animal">▲ На животных</span></p>
+      </article>
+      <article class="label stamp">
+        <p class="label-top">Этикетка № 3 · в полёте</p>
+        <p class="label-num">≈ <span data-count="42">42</span> мин</p>
+        <h3>Фрегаты спят в воздухе</h3>
+        <p>Морские птицы фрегаты в многодневных перелётах спят меньше часа в сутки, короткими эпизодами по несколько секунд, иногда одним полушарием. На суше они спят больше 12 часов.</p>
+        <p class="vr-src">Rattenborg et al., 2016 <span class="ev ev-animal">▲ На животных</span></p>
+      </article>
+      <article class="label stamp">
+        <p class="label-top">Этикетка № 4 · саванна</p>
+        <p class="label-num">≈ <span data-count="2">2</span> часа</p>
+        <h3>Слоны спят мало</h3>
+        <p>Две дикие слонихи-вожака спали в среднем около двух часов в сутки, чаще стоя, а иногда не спали почти двое суток подряд. Всего две особи — выводы осторожные.</p>
+        <p class="vr-src">Gravett et al., 2017 <span class="ev ev-limited">○ Мало данных</span></p>
+      </article>
+      <article class="label stamp">
+        <p class="label-top">Этикетка № 5 · море</p>
+        <p class="label-num">½ мозга</p>
+        <h3>Дельфины спят полушариями</h3>
+        <p>У дельфинов медленным сном спит одно полушарие, второе бодрствует: так можно всплывать дышать и следить за окружением.</p>
+        <p class="vr-src">Мухаметов и др., 1970-е <span class="ev ev-animal">▲ На животных</span></p>
+      </article>
+    </div>
+  </section>
+
+  <!-- Е -->
+  <section class="tab" id="app-e" aria-labelledby="h-app-e">
+    <header class="tab-head"><span class="tab-letter" aria-hidden="true">Е</span><h2 id="h-app-e">Гигиена сна · Делай так!</h2></header>
+    <ol class="poster">
+      <li class="stamp"><span class="p-num">1</span><h3>Вставай в одно время</h3><p>И в будни, и в выходные. Регулярный подъём — главный якорь для внутренних часов.</p></li>
+      <li class="stamp"><span class="p-num">2</span><h3>Лови утренний свет</h3><p>Полчаса на улице утром подводят часы надёжнее, чем кофе.</p></li>
+      <li class="stamp"><span class="p-num">3</span><h3>Вечером приглуши свет</h3><p>За час-два до сна — тёплый неяркий свет, экраны пореже.</p></li>
+      <li class="stamp"><span class="p-num">4</span><h3>Кофе — до обеда</h3><p>Кофеин действует часами: за 6 часов до сна его лучше уже не пить.</p></li>
+      <li class="stamp"><span class="p-num">5</span><h3>Без «рюмки на сон»</h3><p>Алкоголь помогает уснуть, но делает вторую половину ночи прерывистой и подавляет быстрый сон.</p></li>
+      <li class="stamp"><span class="p-num">6</span><h3>Спальня: темно, тихо, прохладно</h3><p>Кровать — для сна, а не для работы.</p></li>
+      <li class="stamp"><span class="p-num">7</span><h3>Не спится — встань</h3><p>Если не удаётся уснуть примерно 20 минут, лучше выйти и заняться спокойным делом при слабом свете, а вернуться, когда захочется спать.</p></li>
+      <li class="stamp"><span class="p-num">8</span><h3>Дневной сон — коротко</h3><p>20–30 минут и не поздно вечером, чтобы не отбить ночной сон.</p></li>
+      <li class="stamp"><span class="p-num">9</span><h3>Двигайся днём</h3><p>Регулярная физическая активность помогает спать; интенсивную тренировку лучше не ставить впритык ко сну.</p></li>
+    </ol>
+    <p class="note">Советы по гигиене сна полезны, но сами по себе не лечат хроническую бессонницу — для неё есть отдельный проверенный метод, см. вкладку Ж.</p>
+  </section>
+
+  <!-- Ж -->
+  <section class="tab" id="app-zh" aria-labelledby="h-app-zh">
+    <header class="tab-head"><span class="tab-letter" aria-hidden="true">Ж</span><h2 id="h-app-zh">Когда идти к врачу</h2></header>
+    <p>Признаки ниже — повод обсудить сон с терапевтом, неврологом или сомнологом, а не ставить себе диагноз. Диагноз ставят после осмотра и, если нужно, исследования сна (полисомнографии).</p>
+    <div class="doctor">
+      <article class="doc-card">
+        <h3>Апноэ сна</h3>
+        <p class="doc-what">Во сне дыхание повторно останавливается или становится поверхностным.</p>
+        <p><b>Стоит обратиться, если:</b> громкий храп с паузами в дыхании, которые замечают близкие; пробуждения с ощущением удушья; сильная дневная сонливость; утренние головные боли.</p>
+        <p class="vr-src">По оценке 2019 года, лёгкая и более тяжёлая форма может быть почти у миллиарда взрослых 30–69 лет в мире. Benjafield et al., 2019</p>
+      </article>
+      <article class="doc-card">
+        <h3>Хроническая бессонница</h3>
+        <p class="doc-what">Трудно уснуть, часто просыпаешься или слишком рано встаёшь — несмотря на возможность спать.</p>
+        <p><b>Стоит обратиться, если:</b> это бывает не реже 3 ночей в неделю дольше 3 месяцев и мешает днём. Первое средство по европейским и американским рекомендациям — когнитивно-поведенческая терапия бессонницы (КПТ-И).</p>
+        <p class="vr-src">Riemann et al., 2017; 2023 · Европейское общество исследований сна</p>
+      </article>
+      <article class="doc-card">
+        <h3>Нарколепсия</h3>
+        <p class="doc-what">Редкое заболевание, при котором мозг плохо удерживает границы сна и бодрствования. Встречается примерно у 2–5 человек на 10 000.</p>
+        <p><b>Стоит обратиться, если:</b> непреодолимая дневная сонливость; внезапная слабость в мышцах при смехе или удивлении; частые сонные параличи или яркие видения при засыпании.</p>
+        <p class="vr-src">Связана с потерей орексиновых нейронов (нарколепсия 1 типа).</p>
+      </article>
+    </div>
+    <p class="note">Срочно — если вы засыпаете за рулём или на опасной работе. Также к врачу — при резких движениях или криках во сне, «ползающих» ощущениях в ногах по вечерам, когда сон заметно изменился без понятной причины.</p>
+  </section>
+
+  <!-- З -->
+  <section class="tab" id="app-z" aria-labelledby="h-app-z">
+    <header class="tab-head"><span class="tab-letter" aria-hidden="true">З</span><h2 id="h-app-z">Словарь и источники</h2></header>
+    <h3 class="sub">Словарь</h3>
+    <dl class="glossary">
+      <dt>Аденозин</dt><dd>Вещество-сигнал, накапливающееся при бодрствовании и усиливающее давление сна; его рецепторы блокирует кофеин.</dd>
+      <dt>Атония</dt><dd>Почти полное расслабление мышц тела в быстром сне.</dd>
+      <dt>Гиппокамп</dt><dd>Парная структура в глубине височных долей, необходимая для записи новых событий в память.</dd>
+      <dt>Гипнограмма</dt><dd>График смены стадий сна за ночь.</dd>
+      <dt>Глимфатическая система</dt><dd>Гипотетический путь тока жидкости через ткань мозга для удаления отходов; описан на мышах.</dd>
+      <dt>K-комплекс</dt><dd>Крупная одиночная волна ЭЭГ, признак стадии N2.</dd>
+      <dt>Мелатонин</dt><dd>Гормон шишковидной железы, сигнал «биологической ночи».</dd>
+      <dt>Меланопсин</dt><dd>Светочувствительный пигмент особых клеток сетчатки, передающих информацию о свете внутренним часам.</dd>
+      <dt>Медленные осцилляции</dt><dd>Синхронные колебания активности коры с частотой около 1 Гц и ниже в глубоком сне.</dd>
+      <dt>Орексины (гипокретины)</dt><dd>Нейропептиды гипоталамуса, поддерживающие бодрствование; их нехватка — причина нарколепсии 1 типа.</dd>
+      <dt>Полисомнография</dt><dd>Ночное исследование сна: ЭЭГ, движения глаз, мышцы, дыхание, пульс, насыщение крови кислородом.</dd>
+      <dt>Сонные веретёна</dt><dd>Короткие вспышки ритма 11–16 Гц в стадии N2.</dd>
+      <dt>Супрахиазматическое ядро (СХЯ)</dt><dd>Главные суточные часы в гипоталамусе.</dd>
+      <dt>Хронотип</dt><dd>Индивидуальная склонность к раннему или позднему режиму.</dd>
+      <dt>ЭЭГ</dt><dd>Электроэнцефалограмма — запись электрической активности мозга с поверхности головы.</dd>
+      <dt>NREM / REM</dt><dd>Медленный сон (стадии N1–N3) и быстрый сон.</dd>
+    </dl>
+    <h3 class="sub">Источники</h3>
+    <ol class="sources">
+      <li>Borbély A.A. A two process model of sleep regulation. <i>Human Neurobiology</i>, 1982.</li>
+      <li>Porkka-Heiskanen T. et al. Adenosine: a mediator of the sleep-inducing effects of prolonged wakefulness. <i>Science</i>, 1997.</li>
+      <li>Drake C. et al. Caffeine effects on sleep taken 0, 3, or 6 hours before going to bed. <i>J Clin Sleep Med</i>, 2013.</li>
+      <li>Czeisler C.A. et al. Stability, precision, and near-24-hour period of the human circadian pacemaker. <i>Science</i>, 1999.</li>
+      <li>Berson D.M. et al.; Hattar S. et al. Работы о меланопсиновых клетках сетчатки. <i>Science</i>, 2002.</li>
+      <li>Moore R.Y., Eichler V.B.; Stephan F.K., Zucker I. Работы о супрахиазматическом ядре, 1972.</li>
+      <li>Нобелевская премия по физиологии или медицине 2017 г.: J.C. Hall, M. Rosbash, M.W. Young.</li>
+      <li>Rechtschaffen A., Kales A. A Manual of Standardized Terminology, Techniques and Scoring System for Sleep Stages of Human Subjects, 1968.</li>
+      <li>Iber C. et al. The AASM Manual for the Scoring of Sleep and Associated Events, 2007.</li>
+      <li>Massimini M. et al. The sleep slow oscillation as a traveling wave. <i>J Neurosci</i>, 2004.</li>
+      <li>Iliff J.J. et al. A paravascular pathway facilitates CSF flow through the brain parenchyma… <i>Sci Transl Med</i>, 2012.</li>
+      <li>Xie L. et al. Sleep drives metabolite clearance from the adult brain. <i>Science</i>, 2013.</li>
+      <li>Fultz N.E. et al. Coupled electrophysiological, hemodynamic, and cerebrospinal fluid oscillations in human sleep. <i>Science</i>, 2019.</li>
+      <li>Eide P.K. et al. Sleep deprivation impairs molecular clearance from the human brain. <i>Brain</i>, 2021.</li>
+      <li>Miao A. et al. Brain clearance is reduced during sleep and anesthesia. <i>Nat Neurosci</i>, 2024.</li>
+      <li>Aserinsky E., Kleitman N. Regularly occurring periods of eye motility, and concomitant phenomena, during sleep. <i>Science</i>, 1953.</li>
+      <li>Dement W., Kleitman N. Cyclic variations in EEG during sleep and their relation to eye movements, body motility, and dreaming. <i>EEG Clin Neurophysiol</i>, 1957.</li>
+      <li>Jouvet M., Michel F. Работы о парадоксальном сне у кошек, 1959.</li>
+      <li>Siclari F. et al. The neural correlates of dreaming. <i>Nat Neurosci</i>, 2017.</li>
+      <li>Sharpless B.A., Barber J.P. Lifetime prevalence rates of sleep paralysis: a systematic review. <i>Sleep Med Rev</i>, 2011.</li>
+      <li>Wilson M.A., McNaughton B.L. Reactivation of hippocampal ensemble memories during sleep. <i>Science</i>, 1994.</li>
+      <li>Rasch B. et al. Odor cues during slow-wave sleep prompt declarative memory consolidation. <i>Science</i>, 2007.</li>
+      <li>Ohayon M.M. et al. Meta-analysis of quantitative sleep parameters from childhood to old age. <i>Sleep</i>, 2004.</li>
+      <li>Watson N.F. et al. Recommended amount of sleep for a healthy adult (AASM/SRS). <i>Sleep</i>, 2015.</li>
+      <li>Van Dongen H.P.A. et al. The cumulative cost of additional wakefulness. <i>Sleep</i>, 2003.</li>
+      <li>Yoo S.-S. et al. The human emotional brain without sleep — a prefrontal amygdala disconnect. <i>Curr Biol</i>, 2007.</li>
+      <li>Spiegel K., Leproult R., Van Cauter E. Impact of sleep debt on metabolic and endocrine function. <i>Lancet</i>, 1999.</li>
+      <li>Dawson D., Reid K. Fatigue, alcohol and performance impairment. <i>Nature</i>, 1997.</li>
+      <li>Williamson A.M., Feyer A.-M. Moderate sleep deprivation produces impairments… equivalent to legally prescribed levels of alcohol intoxication. <i>Occup Environ Med</i>, 2000.</li>
+      <li>Hirshkowitz M. et al. National Sleep Foundation's sleep time duration recommendations. <i>Sleep Health</i>, 2015.</li>
+      <li>Walch O.J., Cochran A., Forger D.B. A global quantification of “normal” sleep schedules using smartphone data. <i>Sci Adv</i>, 2016.</li>
+      <li>OECD Time Use Database / OECD Gender Data Portal: время, затраченное на сон, выпуски 2016–2021.</li>
+      <li>Roenneberg T. et al. A marker for the end of adolescence. <i>Curr Biol</i>, 2004; Epidemiology of the human circadian clock. <i>Sleep Med Rev</i>, 2007.</li>
+      <li>Jones S.E. et al. Genome-wide association analyses of chronotype in 697,828 individuals. <i>Nat Commun</i>, 2019.</li>
+      <li>Gulevich G., Dement W., Johnson L. Psychiatric and EEG observations on a case of prolonged (264 hours) wakefulness. <i>Arch Gen Psychiatry</i>, 1966.</li>
+      <li>Rechtschaffen A. et al. Sleep deprivation in the rat. <i>Sleep</i>, 1989 (серия работ).</li>
+      <li>Манасеина М.М. Сон как треть жизни, или Физиология, патология, гигиена и психология сна. СПб., 1892.</li>
+      <li>Rattenborg N.C. et al. Evidence that birds sleep in mid-flight. <i>Nat Commun</i>, 2016.</li>
+      <li>Gravett N. et al. Inactivity/sleep in two wild free-roaming African elephant matriarchs. <i>PLoS ONE</i>, 2017.</li>
+      <li>de Lecea L. et al. <i>PNAS</i>, 1998; Sakurai T. et al. <i>Cell</i>, 1998 — открытие орексинов.</li>
+      <li>Lin L. et al. <i>Cell</i>, 1999; Nishino S. et al. <i>Lancet</i>, 2000 — орексины и нарколепсия.</li>
+      <li>Benjafield A.V. et al. Estimation of the global prevalence and burden of obstructive sleep apnoea. <i>Lancet Respir Med</i>, 2019.</li>
+      <li>Riemann D. et al. European guideline for the diagnosis and treatment of insomnia. <i>J Sleep Res</i>, 2017; обновление 2023.</li>
+      <li>Berger H. Über das Elektrenkephalogramm des Menschen. <i>Arch Psychiatr Nervenkr</i>, 1929.</li>
+      <li>Loomis A.L., Harvey E.N., Hobart G.A. Cerebral states during sleep, as studied by human brain potentials. <i>J Exp Psychol</i>, 1937.</li>
+    </ol>
+  </section>
+</div>
+
+<footer class="colophon">
+  <p class="disclaimer"><b>Атлас научно-популярный и не является медицинской консультацией.</b> Он не заменяет осмотр врача и не подходит для самодиагностики. Если сон беспокоит вас — обратитесь к специалисту.</p>
+  <p>«Ночная смена» · стилизация под научно-популярную печать 1960-х годов; названия и логотипы реальных изданий не использованы. Шрифты: Russo One, Oswald, PT Serif, PT Mono (Google Fonts). 3D: Three.js. Карта: Natural Earth через world-atlas.</p>
+  <p><a href="#top">↑ К обложке</a></p>
+</footer>
+</main>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>
